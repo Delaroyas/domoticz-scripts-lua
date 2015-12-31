@@ -44,8 +44,14 @@ level= tonumber(otherdevices_svalues[device])
 --newlevel=100;
 
 -- curfiew time in hours
-curfew=20.833333333
+curfew=20.833333333 --20h50m
 delay=20/60 -- lightout gradiant delay in hours
+wakeup=8.50 --6h30m
+
+-- curfiew test time in hours
+--delay=4/60 -- lightout gradiant delay in hours
+--wakeup=10+20/60
+--curfew=10+26/60
 
 
 if (device=='Dimmer Olivia') then
@@ -59,11 +65,26 @@ if (device=='Dimmer Olivia') then
 	-- Measure time since curfiew
 	delta=t-curfew
 
+	-- Measure time since wakeup
+	deltaW=t-wakeup
+
+	-- If it is sill early
+	if (deltaW<0) then
+		--still nighttime, do notthing
+	elseif (deltaW<delay) then
+		newlevel = (deltaW/delay)*100
+		-- Increase light if needed
+		if (level < newlevel) then
+			commandArray['Dimmer Olivia']='Set Level '..newlevel
+		end
+	--elseif (deltaW>delay) then
+		
+	
 	-- If lightout time is passed
-	if (delta>delay) then
+	elseif (delta>delay) then
 		-- Turn off light if needed
 		if not (status == 'Off') then
-			commandArray['Dimmer Olivia']='Off'
+			commandArray[device]='Off'
 		end
 	-- If curfew is passed
 	elseif (delta>0) then
@@ -71,12 +92,12 @@ if (device=='Dimmer Olivia') then
 		newlevel = (1 - delta/delay)*100
 		-- Dimm light if needed
 		if (level > newlevel) then
-			commandArray['Dimmer Olivia']='Set Level '..newlevel
+			commandArray[device]='Set Level '..newlevel
 		end
 	end
 	
 	
---      print(device .. ' vaut '.. status..','..level ..' coucher: '.. delta)
+      --print(device .. ' vaut '.. status..':'..level ..', heure: '.. t ..', lever: '.. deltaW..', coucher: '.. delta)
 
 end
 return commandArray
