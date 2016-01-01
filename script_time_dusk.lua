@@ -33,55 +33,54 @@
 
 commandArray = {}
 
--- Dimmer name
-device = 'Dimmer Olivia' 
 
 -- Get curent status 'On' 'Off' 'Set Level'
-status= otherdevices[device]
 
--- Get current level (a number between 0 and 100)
-level= tonumber(otherdevices_svalues[device])
---newlevel=100;
+dimmers={}
 
--- curfiew time in hours
-curfew=20.833333333 --20h50m
-delay=20/60 -- lightout gradiant delay in hours
-wakeup=8.50 --6h30m
+dimmers['Dimmer Olivia']={}
+dimmers['Dimmer Olivia'].curfew=20.833333333
+dimmers['Dimmer Olivia'].delay=20/60
+dimmers['Dimmer Olivia'].wakeup=8.50
+dimmers['Dimmer Olivia'].max=100
 
--- curfiew test time in hours
---delay=4/60 -- lightout gradiant delay in hours
---wakeup=10+20/60
---curfew=10+26/60
+dimmers['Dimmer Parents']={}
+dimmers['Dimmer Parents'].curfew=25
+dimmers['Dimmer Parents'].delay=4/60
+dimmers['Dimmer Parents'].wakeup=12+35/60
+dimmers['Dimmer Parents'].max=50
 
 
-if (device=='Dimmer Olivia') then
-
-	-- Get time in hours since 00:00
+-- Get time in hours since 00:00
 	curdt=os.date('*t') --now
 	midnightdt={year = curdt.year, month = curdt.month, day = curdt.day, hour = 0, min = 0, sec = 0}
 	t=os.difftime(os.time(curdt),  os.time(midnightdt)) -- number of seconds since Midnight
 	t=t/60/60 -- number of hours since midnight
-	
+
+for device,props in pairs(dimmers) do 
+	status= otherdevices[device]
+	level= tonumber(otherdevices_svalues[device])
+
 	-- Measure time since curfiew
-	delta=t-curfew
+	delta=t-props.curfew
 
 	-- Measure time since wakeup
-	deltaW=t-wakeup
+	deltaW=t-props.wakeup
 
 	-- If it is sill early
 	if (deltaW<0) then
 		--still nighttime, do notthing
-	elseif (deltaW<delay) then
-		newlevel = (deltaW/delay)*100
+	elseif (deltaW<props.delay) then
+		newlevel = (deltaW/props.delay)*props.max
 		-- Increase light if needed
 		if (level < newlevel) then
-			commandArray['Dimmer Olivia']='Set Level '..newlevel
+			commandArray[device]='Set Level '..newlevel
 		end
 	--elseif (deltaW>delay) then
 		
 	
 	-- If lightout time is passed
-	elseif (delta>delay) then
+	elseif (delta>props.delay) then
 		-- Turn off light if needed
 		if not (status == 'Off') then
 			commandArray[device]='Off'
@@ -89,7 +88,7 @@ if (device=='Dimmer Olivia') then
 	-- If curfew is passed
 	elseif (delta>0) then
 		-- Measure expected level
-		newlevel = (1 - delta/delay)*100
+		newlevel = (1 - delta/props.delay)*props.max
 		-- Dimm light if needed
 		if (level > newlevel) then
 			commandArray[device]='Set Level '..newlevel
@@ -97,7 +96,7 @@ if (device=='Dimmer Olivia') then
 	end
 	
 	
-      --print(device .. ' vaut '.. status..':'..level ..', heure: '.. t ..', lever: '.. deltaW..', coucher: '.. delta)
+   --print(device .. ' vaut '.. status..':'..level ..', heure: '.. t ..', lever: '.. deltaW..', coucher: '.. delta)
 
 end
 return commandArray
